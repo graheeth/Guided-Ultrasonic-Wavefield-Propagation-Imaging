@@ -1,4 +1,5 @@
 import os
+import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob
@@ -6,72 +7,53 @@ from PIL import Image
 
 path = os.path.dirname(__file__)
 
-i = 0
-coloumn = 0
-FRD = 0
-AList = []
-VList = []
-ProperList = []
-Height = []
+AllValues = []
+dataPoints = len(glob.glob(f"{path}/rawData/*.tas"))
 
-while i < len(glob.glob(f"{path}/rawData/*")):
+# load all data
+for idx in range(dataPoints):
     df = pd.read_csv(
-        f"{path}/rawData/FRD " + str(i) + ".tas", delimiter="\t", header=None
+        f"{path}/rawData/FRD " + str(idx) + ".tas", delimiter="\t", header=None
     )
+    AllValues.append(df.values.tolist())
 
-    Horizontal = df.columns.values
-    Vertical = [*range(len(glob.glob(f"{path}/rawData/*.tas")))]
+# format data
+X = df.columns.values
+Y = list(range(dataPoints))
+Z = []
 
-    HList = df.columns.values.tolist()
-    TList = df.index.values.tolist()
-    AList.append(df.values.tolist())
-    VList.append(i)
+for coloumn, val in enumerate(X):
+    ProperList = []
 
-    i += 1
-
-while coloumn < len(Horizontal):
-    FRD = 0
-
-    while FRD < len(glob.glob(f"{path}/rawData/*.tas")):
-        FinalizedList = AList[FRD][coloumn]
+    for idx in range(dataPoints):
+        FinalizedList = AllValues[idx][coloumn]
         ProperList.append(FinalizedList)
 
-        if len(ProperList) == len(glob.glob(f"{path}/rawData/*.tas")):
-            Height.append(ProperList)
-            ProperList = []
+    Z.append(ProperList)
 
-        FRD += 1
-
-    coloumn += 1
-
-if not os.path.exists(f"{path}/images"):
-    os.makedirs(f"{path}/images")
-
-PicNum = 0
-
-while PicNum < len(Height):
-    fig = plt.figure()
-    plt.contourf(Horizontal, Vertical, Height[PicNum])
-    plt.colorbar()
-    plt.axis("auto")
-    fig.savefig(f"{path}/images/image {str(PicNum)}.png")
-    plt.close(fig)
-
-    PicNum += 1
-
+# store plots
 frames = []
 
-imgs = glob.glob(f"{path}/images/*.png")
-imgs.sort(key=lambda y: int(y.split(" ")[-1][0:-4]))
+for idx, val in enumerate(Z):
+    fig = plt.figure()
+    plt.contourf(X, Y, Z[idx])
+    plt.colorbar()
+    plt.axis("auto")
 
-for a in imgs:
-    new_frame = Image.open(a)
+    # save figure in memory
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    new_frame = Image.open(buf)
     frames.append(new_frame)
 
-duration = round(len(glob.glob(f"{path}/images/*.png")) / 30)
+    plt.close(fig)
 
+duration = round(len(frames) / 30)
+
+# export GIF
 frames[0].save(
-    f"{path}/images/gr.gif",
+    f"{path}/gr.gif",
     format="GIF",
     append_images=frames[1:],
     save_all=True,
