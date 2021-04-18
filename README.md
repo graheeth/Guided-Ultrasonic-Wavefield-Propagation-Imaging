@@ -8,4 +8,8 @@
 
 ### Made A Thing
 
+<div align="center">
+
 ![](gr.gif)
+
+</div>
