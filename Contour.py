@@ -17,26 +17,26 @@ for idx in range(dataPoints):
     )
     AllValues.append(df.values.tolist())
 
+df = pd.DataFrame(AllValues)
+
 # format data
-X = df.columns.values
-Y = list(range(dataPoints))
-Z = []
+X = list(range(len(df[0][0])))
+Y = list(range(len(df[0])))
+ZList = []
 
-for coloumn, val in enumerate(X):
-    ProperList = []
+for i, column in df.iteritems():
+    Z = []
+    for value in column:
+        Z.append(value)
 
-    for idx in range(dataPoints):
-        FinalizedList = AllValues[idx][coloumn]
-        ProperList.append(FinalizedList)
-
-    Z.append(ProperList)
+    ZList.append(Z)
 
 # store plots
 frames = []
 
 for idx, val in enumerate(Z):
     fig = plt.figure()
-    plt.contourf(X, Y, Z[idx])
+    plt.contourf(X, Y, ZList[idx])
     plt.colorbar()
     plt.axis("auto")
 
