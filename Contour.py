@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob
@@ -7,36 +8,35 @@ from PIL import Image
 
 path = os.path.dirname(__file__)
 
-AllValues = []
-dataPoints = len(glob.glob(f"{path}/rawData/*.tas"))
+all_files = glob.glob(f"{path}/rawData/*.tas")
+all_files.sort(key=lambda f: int(re.sub("\D", "", f)))
 
-# load all data
-for idx in range(dataPoints):
-    df = pd.read_csv(
-        f"{path}/rawData/FRD " + str(idx) + ".tas", delimiter="\t", header=None
-    )
-    AllValues.append(df.values.tolist())
+raw_csv = [pd.read_csv(file, delimiter="\t", header=None) for file in all_files]
 
-df = pd.DataFrame(AllValues)
+num_rows = len(raw_csv[0])  # 500
+num_files = len(all_files)  # 51
 
 # format data
-X = list(range(len(df[0][0])))
-Y = list(range(len(df[0])))
-ZList = []
+sorted_csv = []
+rows = len(raw_csv[0].index)
 
-for i, column in df.iteritems():
-    Z = []
-    for value in column:
-        Z.append(value)
+for index in range(rows):
+    for i, df in enumerate(raw_csv):
+        sorted_csv.append(df.iloc[index])
 
-    ZList.append(Z)
+
+sorted_csv = pd.DataFrame(sorted_csv)
+X = sorted_csv.columns.values  # 200
+Y = [*range(int(len(sorted_csv.index) / num_rows))]  # 51
 
 # store plots
 frames = []
+fig = plt.figure()
 
-for idx, val in enumerate(Z):
-    fig = plt.figure()
-    plt.contourf(X, Y, ZList[idx])
+for i in range(num_rows):
+    print(f"Processing contour {str(i + 1)}...")
+
+    plt.contourf(X, Y, sorted_csv.iloc[i * num_files : (i + 1) * num_files])
     plt.colorbar()
     plt.axis("auto")
 
@@ -47,11 +47,11 @@ for idx, val in enumerate(Z):
     new_frame = Image.open(buf)
     frames.append(new_frame)
 
-    plt.close(fig)
-
-duration = round(len(frames) / 30)
+    plt.clf()
 
 # export GIF
+duration = round(len(frames) / 30)
+
 frames[0].save(
     f"{path}/gr.gif",
     format="GIF",
