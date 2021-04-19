@@ -13,3 +13,11 @@
 ![](gr.gif)
 
 </div>
+
+### CSV Data Structure
+
+<div align="center">
+
+![](rawDataStructure.png)
+
+</div>
